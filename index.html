@@ -1,2 +1,222 @@
-# Resume-Builder
-A simple and user friendly tool that allows you to make and download your resume/CV in PDF form.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resume Builder</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    form, .resume-output {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    form input, form textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    form button {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #profilePreview {
+      max-width: 120px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+    .resume-output h2 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .resume-section {
+      margin-bottom: 15px;
+    }
+    #downloadBtn {
+      margin-top: 15px;
+      background: #28a745;
+    }
+    .profile-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .profile-container img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        flex-direction: row;
+        gap: 30px;
+      }
+      form, .resume-output {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Resume Builder</h1>
+  <div class="container">
+    <!-- Form Section -->
+    <form id="resumeForm">
+      <input type="text" id="name" placeholder="Full Name" required />
+      <input type="text" id="email" placeholder="Email" required />
+      <input type="text" id="phone" placeholder="Phone Number" required />
+      <input type="text" id="skills" placeholder="Skills (comma separated)" />
+      <textarea id="experience" placeholder="Work Experience" rows="4"></textarea>
+      <textarea id="education" placeholder="Education" rows="4"></textarea>
+      <label>Upload Profile Photo:</label>
+      <input type="file" id="profilePhoto" accept="image/*" />
+      <img id="profilePreview" src="" alt="" hidden />
+      <button type="submit">Generate Resume</button>
+    </form>
+
+    <!-- Resume Output Section -->
+    <div class="resume-output" id="resumeOutput">
+      <h2>Your Resume will appear here</h2>
+    </div>
+  </div>
+
+  <!-- Download Button -->
+  <div style="text-align: center; margin-top: 20px;">
+    <button id="downloadBtn">Download Resume as PDF</button>
+  </div>
+
+  <!-- html2pdf Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <script>
+    const form = document.getElementById('resumeForm');
+    const output = document.getElementById('resumeOutput');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const profilePhotoInput = document.getElementById('profilePhoto');
+    const profilePreview = document.getElementById('profilePreview');
+
+    let photoDataURL = ''; // Holds uploaded image
+
+    // Preview uploaded image
+    profilePhotoInput.addEventListener('change', function () {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          photoDataURL = e.target.result;
+          profilePreview.src = photoDataURL;
+          profilePreview.hidden = false;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const skills = document.getElementById('skills').value.trim().split(',');
+      const experience = document.getElementById('experience').value.trim();
+      const education = document.getElementById('education').value.trim();
+
+      if (!name || !email || !phone) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+
+      // Clear previous output
+      output.innerHTML = '';
+
+      // Profile container with optional image
+      const profileContainer = document.createElement('div');
+      profileContainer.classList.add('profile-container');
+
+      if (photoDataURL) {
+        const img = document.createElement('img');
+        img.src = photoDataURL;
+        profileContainer.appendChild(img);
+      }
+
+      const title = document.createElement('h2');
+      title.textContent = name;
+      profileContainer.appendChild(title);
+      output.appendChild(profileContainer);
+
+      // Contact
+      const contactSection = document.createElement('div');
+      contactSection.classList.add('resume-section');
+      contactSection.innerHTML = `<strong>Email:</strong> ${email}<br><strong>Phone:</strong> ${phone}`;
+      output.appendChild(contactSection);
+
+      // Skills
+      const skillSection = document.createElement('div');
+      skillSection.classList.add('resume-section');
+      skillSection.innerHTML = `<strong>Skills:</strong><ul>${skills.map(skill => `<li>${skill.trim()}</li>`).join('')}</ul>`;
+      output.appendChild(skillSection);
+
+      // Experience
+      const expSection = document.createElement('div');
+      expSection.classList.add('resume-section');
+      expSection.innerHTML = `<strong>Experience:</strong><p>${experience}</p>`;
+      output.appendChild(expSection);
+
+      // Education
+      const eduSection = document.createElement('div');
+      eduSection.classList.add('resume-section');
+      eduSection.innerHTML = `<strong>Education:</strong><p>${education}</p>`;
+      output.appendChild(eduSection);
+    });
+
+    // PDF Download Handler
+    downloadBtn.addEventListener('click', () => {
+      const element = document.getElementById('resumeOutput');
+      if (element.innerText.trim() === 'Your Resume will appear here') {
+        alert("Please generate your resume first.");
+        return;
+      }
+
+      const opt = {
+        margin: 0.5,
+        filename: 'resume.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    });
+  </script>
+</body>
+</html>
