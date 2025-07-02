@@ -12,26 +12,53 @@
     }
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f0f2f5;
+      background: #f4f6f8;
       padding: 20px;
+      transition: background 0.3s, color 0.3s;
     }
+    body.dark {
+      background: #121212;
+      color: #fff;
+    }
+
     h1 {
       text-align: center;
       margin-bottom: 20px;
+      font-size: 2em;
     }
+    .theme-toggle {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .theme-toggle button {
+      padding: 8px 16px;
+      border: none;
+      background: #333;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
     .container {
       display: flex;
       flex-direction: column;
       gap: 20px;
-      max-width: 1000px;
+      max-width: 1100px;
       margin: auto;
     }
     form, .resume-output {
       background: #fff;
       padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: background 0.3s, color 0.3s;
     }
+    body.dark form,
+    body.dark .resume-output {
+      background: #1e1e1e;
+      color: #fff;
+    }
+
     form input, form textarea {
       width: 100%;
       padding: 10px;
@@ -47,33 +74,91 @@
       border-radius: 6px;
       cursor: pointer;
     }
-    #profilePreview {
-      max-width: 120px;
+
+    .profilePreview {
+      max-width: 100px;
       margin-top: 10px;
-      border-radius: 8px;
+      border-radius: 50%;
+      display: block;
     }
-    .resume-output h2 {
-      color: #333;
+
+    .resume-output {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .left-column {
+      flex: 1;
+      max-width: 250px;
+      text-align: center;
+    }
+    .left-column img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
       margin-bottom: 10px;
     }
+    .right-column {
+      flex: 3;
+    }
+
     .resume-section {
       margin-bottom: 15px;
     }
-    #downloadBtn {
-      margin-top: 15px;
-      background: #28a745;
+    .resume-section strong {
+      display: block;
+      margin-bottom: 5px;
+      color: #007bff;
     }
-    .profile-container {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      margin-bottom: 15px;
+
+    .actions {
+      text-align: center;
+      margin-top: 20px;
     }
-    .profile-container img {
-      width: 100px;
-      height: 100px;
-      object-fit: cover;
-      border-radius: 8px;
+
+    .dynamic-download {
+      background: linear-gradient(135deg, #007bff, #00c6ff);
+      color: white;
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 16px rgba(0, 123, 255, 0.3);
+      font-weight: bold;
+      position: relative;
+    }
+
+    .dynamic-download:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 20px rgba(0, 123, 255, 0.5);
+    }
+
+    .dynamic-download:active {
+      transform: scale(0.98);
+      background: linear-gradient(135deg, #0056b3, #0088cc);
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     @media (min-width: 768px) {
@@ -88,7 +173,13 @@
   </style>
 </head>
 <body>
-  <h1>Resume Builder</h1>
+
+  <h1 id="typingHeader"></h1>
+
+  <div class="theme-toggle">
+    <button id="themeToggle">Toggle Dark Mode</button>
+  </div>
+
   <div class="container">
     <!-- Form Section -->
     <form id="resumeForm">
@@ -100,7 +191,7 @@
       <textarea id="education" placeholder="Education" rows="4"></textarea>
       <label>Upload Profile Photo:</label>
       <input type="file" id="profilePhoto" accept="image/*" />
-      <img id="profilePreview" src="" alt="" hidden />
+      <img id="profilePreview" src="" alt="Profile" hidden />
       <button type="submit">Generate Resume</button>
     </form>
 
@@ -110,24 +201,39 @@
     </div>
   </div>
 
-  <!-- Download Button -->
-  <div style="text-align: center; margin-top: 20px;">
-    <button id="downloadBtn">Download Resume as PDF</button>
+  <div class="actions">
+    <button id="downloadBtn" class="dynamic-download">
+      ⬇️ Download Resume as PDF
+      <span class="spinner" id="spinner"></span>
+    </button>
   </div>
 
-  <!-- html2pdf Library -->
+  <!-- html2pdf.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <script>
+    // Typing Animation
+    let i = 0;
+    const text = "Resume Builder";
+    function typeWriter() {
+      if (i < text.length) {
+        document.getElementById("typingHeader").innerHTML += text.charAt(i);
+        i++;
+        setTimeout(typeWriter, 100);
+      }
+    }
+    typeWriter();
+
     const form = document.getElementById('resumeForm');
     const output = document.getElementById('resumeOutput');
     const downloadBtn = document.getElementById('downloadBtn');
     const profilePhotoInput = document.getElementById('profilePhoto');
     const profilePreview = document.getElementById('profilePreview');
+    const spinner = document.getElementById('spinner');
+    const themeToggle = document.getElementById('themeToggle');
 
-    let photoDataURL = ''; // Holds uploaded image
+    let photoDataURL = '';
 
-    // Preview uploaded image
     profilePhotoInput.addEventListener('change', function () {
       const file = this.files[0];
       if (file) {
@@ -156,50 +262,56 @@
         return;
       }
 
-      // Clear previous output
+      // Resume Output Reset
       output.innerHTML = '';
 
-      // Profile container with optional image
-      const profileContainer = document.createElement('div');
-      profileContainer.classList.add('profile-container');
+      const left = document.createElement('div');
+      left.classList.add('left-column');
 
       if (photoDataURL) {
         const img = document.createElement('img');
         img.src = photoDataURL;
-        profileContainer.appendChild(img);
+        left.appendChild(img);
       }
 
-      const title = document.createElement('h2');
-      title.textContent = name;
-      profileContainer.appendChild(title);
-      output.appendChild(profileContainer);
+      const nameEl = document.createElement('h3');
+      nameEl.textContent = name;
+      left.appendChild(nameEl);
+
+      const right = document.createElement('div');
+      right.classList.add('right-column');
 
       // Contact
-      const contactSection = document.createElement('div');
-      contactSection.classList.add('resume-section');
-      contactSection.innerHTML = `<strong>Email:</strong> ${email}<br><strong>Phone:</strong> ${phone}`;
-      output.appendChild(contactSection);
+      const contact = document.createElement('div');
+      contact.classList.add('resume-section');
+      contact.innerHTML = `<strong>Contact:</strong>${email}<br>${phone}`;
+      right.appendChild(contact);
 
       // Skills
-      const skillSection = document.createElement('div');
-      skillSection.classList.add('resume-section');
-      skillSection.innerHTML = `<strong>Skills:</strong><ul>${skills.map(skill => `<li>${skill.trim()}</li>`).join('')}</ul>`;
-      output.appendChild(skillSection);
+      const skillList = skills.map(skill => `<li>${skill.trim()}</li>`).join('');
+      const skillsEl = document.createElement('div');
+      skillsEl.classList.add('resume-section');
+      skillsEl.innerHTML = `<strong>Skills:</strong><ul>${skillList}</ul>`;
+      right.appendChild(skillsEl);
 
       // Experience
-      const expSection = document.createElement('div');
-      expSection.classList.add('resume-section');
-      expSection.innerHTML = `<strong>Experience:</strong><p>${experience}</p>`;
-      output.appendChild(expSection);
+      const expEl = document.createElement('div');
+      expEl.classList.add('resume-section');
+      expEl.innerHTML = `<strong>Experience:</strong><p>${experience}</p>`;
+      right.appendChild(expEl);
 
       // Education
-      const eduSection = document.createElement('div');
-      eduSection.classList.add('resume-section');
-      eduSection.innerHTML = `<strong>Education:</strong><p>${education}</p>`;
-      output.appendChild(eduSection);
+      const eduEl = document.createElement('div');
+      eduEl.classList.add('resume-section');
+      eduEl.innerHTML = `<strong>Education:</strong><p>${education}</p>`;
+      right.appendChild(eduEl);
+
+      // Combine Columns
+      output.appendChild(left);
+      output.appendChild(right);
     });
 
-    // PDF Download Handler
+    // PDF Download
     downloadBtn.addEventListener('click', () => {
       const element = document.getElementById('resumeOutput');
       if (element.innerText.trim() === 'Your Resume will appear here') {
@@ -207,15 +319,24 @@
         return;
       }
 
-      const opt = {
+      spinner.style.display = 'inline-block';
+      downloadBtn.disabled = true;
+
+      html2pdf().set({
         margin: 0.5,
         filename: 'resume.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
+      }).from(element).save().then(() => {
+        spinner.style.display = 'none';
+        downloadBtn.disabled = false;
+      });
+    });
 
-      html2pdf().set(opt).from(element).save();
+    // Theme Toggle
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
     });
   </script>
 </body>
