@@ -76,11 +76,11 @@
       cursor: pointer;
     }
 
-    #profilePreview {
-      max-width: 100px;
+    .profile-preview {
+      max-width: 150px;
       margin-top: 10px;
       border-radius: 50%;
-      display: block;
+      display: none;
     }
 
     .resume-output {
@@ -195,7 +195,7 @@
       <textarea id="education" placeholder="Education" rows="4"></textarea>
       <label>Upload Profile Photo:</label>
       <input type="file" id="profilePhoto" accept="image/*" />
-      <img id="profilePreview" src="" alt="Profile" hidden />
+      <img id="profilePreview" src="" alt="Profile" class="profile-preview" />
       <button type="submit">Generate Resume</button>
     </form>
 
